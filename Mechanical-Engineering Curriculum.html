@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ME Retraining Curriculum</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;0,900;1,300;1,600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e10;
+    --surface: #16161a;
+    --border: #2a2a30;
+    --accent: #e8c547;
+    --accent2: #5bc4a0;
+    --accent3: #c47ab4;
+    --text: #e8e6df;
+    --muted: #7a7870;
+    --card: #1c1c22;
+    --red: #e8614a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(232,197,71,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(232,197,71,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    padding: 48px 0 32px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 48px;
+  }
+
+  .header-tag {
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(2.2rem, 5vw, 3.8rem);
+    font-weight: 900;
+    line-height: 1.05;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .header-sub {
+    color: var(--muted);
+    font-size: 13px;
+    max-width: 580px;
+    line-height: 1.7;
+  }
+
+  /* Progress bar */
+  .progress-banner {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .progress-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .progress-track {
+    flex: 1;
+    min-width: 200px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 3px;
+    transition: width 0.6s ease;
+    width: 0%;
+  }
+
+  .progress-stats {
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  .reset-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+
+  .reset-btn:hover {
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  /* Phase navigation */
+  .phase-nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+  }
+
+  .phase-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .phase-btn:hover, .phase-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(232,197,71,0.06);
+  }
+
+  /* Section headers */
+  .phase-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .phase-number {
+    font-family: 'Fraunces', serif;
+    font-size: 4rem;
+    font-weight: 900;
+    color: var(--border);
+    line-height: 1;
+    user-select: none;
+  }
+
+  .phase-info h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .phase-info p {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* Phase section */
+  .phase-section {
+    margin-bottom: 64px;
+    display: none;
+  }
+
+  .phase-section.visible {
+    display: block;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Subject cards grid */
+  .subjects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  /* Subject card */
+  .subject-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .subject-card:hover {
+    border-color: #3a3a42;
+  }
+
+  .subject-card.completed {
+    border-color: rgba(91,196,160,0.3);
+  }
+
+  .card-header {
+    padding: 20px 20px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .card-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .card-title-block { flex: 1; }
+
+  .card-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 3px;
+    line-height: 1.3;
+  }
+
+  .card-meta {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .card-expand {
+    color: var(--muted);
+    font-size: 16px;
+    transition: transform 0.2s;
+    margin-top: 2px;
+  }
+
+  .subject-card.open .card-expand { transform: rotate(180deg); }
+
+  /* Topics checklist */
+  .card-body {
+    display: none;
+    padding: 0 20px 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .subject-card.open .card-body { display: block; }
+
+  .section-label {
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 16px 0 10px;
+  }
+
+  .topic-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(42,42,48,0.6);
+  }
+
+  .topic-item:last-child { border-bottom: none; }
+
+  .topic-check {
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 3px;
+    flex-shrink: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+    transition: all 0.15s;
+  }
+
+  .topic-check:hover { border-color: var(--accent2); }
+
+  .topic-check.checked {
+    background: var(--accent2);
+    border-color: var(--accent2);
+  }
+
+  .topic-check.checked::after {
+    content: '✓';
+    font-size: 10px;
+    color: var(--bg);
+    font-weight: bold;
+  }
+
+  .topic-text {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.5;
+    cursor: pointer;
+    flex: 1;
+    transition: color 0.15s;
+  }
+
+  .topic-text.checked { color: var(--muted); text-decoration: line-through; }
+
+  /* Resources */
+  .resource-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(42,42,48,0.4);
+  }
+
+  .resource-item:last-child { border-bottom: none; }
+
+  .res-badge {
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    margin-top: 1px;
+    font-weight: 500;
+  }
+
+  .res-badge.textbook { background: rgba(196,122,180,0.15); color: var(--accent3); border: 1px solid rgba(196,122,180,0.3); }
+  .res-badge.mit { background: rgba(232,197,71,0.1); color: var(--accent); border: 1px solid rgba(232,197,71,0.25); }
+  .res-badge.practice { background: rgba(91,196,160,0.1); color: var(--accent2); border: 1px solid rgba(91,196,160,0.25); }
+  .res-badge.video { background: rgba(232,97,74,0.1); color: var(--red); border: 1px solid rgba(232,97,74,0.25); }
+  .res-badge.sim { background: rgba(100,149,237,0.1); color: #7ab4e8; border: 1px solid rgba(100,149,237,0.25); }
+
+  .res-text {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+    flex: 1;
+  }
+
+  .res-text a {
+    color: var(--accent2);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(91,196,160,0.3);
+  }
+
+  .res-text a:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* Card progress bar */
+  .card-progress {
+    height: 3px;
+    background: var(--border);
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .card-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    transition: width 0.4s ease;
+  }
+
+  /* Tip box */
+  .tip-box {
+    background: rgba(232,197,71,0.05);
+    border: 1px solid rgba(232,197,71,0.15);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin: 12px 0 0;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .tip-box strong { color: var(--accent); }
+
+  /* Weekly schedule */
+  .schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .sched-day {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+
+  .sched-day-name {
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .sched-day-task {
+    font-size: 10px;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  /* All phases view */
+  #all-view .phase-section { display: block; }
+
+  .footer-note {
+    margin: 60px 0 40px;
+    padding: 20px 0;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.8;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="header-tag">// University of Waterloo — Mechanical Engineering</div>
+    <h1>Return to<br><em>Engineering</em></h1>
+    <p class="header-sub">A self-driven retraining curriculum built around your existing UW textbooks, MIT OpenCourseWare, and free online resources. 7 years away — let's rebuild systematically.</p>
+  </header>
+
+  <div class="progress-banner">
+    <span class="progress-label">Overall Progress</span>
+    <div class="progress-track">
+      <div class="progress-fill" id="global-progress-fill"></div>
+    </div>
+    <span class="progress-stats" id="global-progress-text">0 / 0 topics</span>
+    <button class="reset-btn" onclick="resetAll()">↺ Reset</button>
+  </div>
+
+  <nav class="phase-nav" id="phase-nav">
+    <button class="phase-btn active" onclick="showPhase('all')">All Phases</button>
+    <button class="phase-btn" onclick="showPhase('1')">Phase 1 — Foundations</button>
+    <button class="phase-btn" onclick="showPhase('2')">Phase 2 — Core ME</button>
+    <button class="phase-btn" onclick="showPhase('3')">Phase 3 — Advanced</button>
+    <button class="phase-btn" onclick="showPhase('schedule')">Weekly Schedule</button>
+  </nav>
+
+  <div id="curriculum-root"></div>
+
+  <div class="footer-note">
+    Progress is saved automatically in your browser. Open this file anytime to continue. &nbsp;|&nbsp; Built for a UWaterloo MechEng grad returning after 7 years.
+  </div>
+</div>
+
+<script>
+const DATA = [
+  // ─── PHASE 1: FOUNDATIONS ──────────────────────────────────────────
+  {
+    phase: 1,
+    phaseName: "Foundations",
+    phaseDesc: "Re-establish mathematical and physical intuition before diving into ME-specific topics. ~4–6 weeks.",
+    subjects: [
+      {
+        id: "calc",
+        icon: "∫",
+        iconBg: "rgba(232,197,71,0.12)",
+        title: "Calculus & Differential Equations",
+        meta: "MATH 115/116/118 · MATH 211",
+        topics: [
+          "Limits, derivatives, chain rule — refresh speed and fluency",
+          "Integration techniques: by parts, substitution, partial fractions",
+          "Multivariable calculus: partial derivatives, gradients, Jacobians",
+          "Double & triple integrals; line and surface integrals",
+          "ODEs: first-order, second-order, homogeneous & non-homogeneous",
+          "Systems of ODEs; phase plane analysis",
+          "Laplace transforms and their engineering applications",
+        ],
+        resources: [
+          { type: "textbook", text: "Your textbook: Stewart — Calculus (pull from OneDrive)" },
+          { type: "mit", text: '<a href="https://ocw.mit.edu/courses/18-01sc-single-variable-calculus-fall-2010/" target="_blank">MIT 18.01SC</a> — Single Variable Calculus (full course, free)' },
+          { type: "mit", text: '<a href="https://ocw.mit.edu/courses/18-03sc-differential-equations-fall-2011/" target="_blank">MIT 18.03SC</a> — Differential Equations (full course, free)' },
+          { type: "practice", text: '<a href="https://www.khanacademy.org/math/differential-equations" target="_blank">Khan Academy</a> — Differential Equations (problem sets + videos)' },
+          { type: "practice", text: '<a href="https://www.wolframalpha.com" target="_blank">WolframAlpha</a> — Use to check your hand calculations' },
+        ],
+        tip: "Aim for 45–60 min/day on math. Don't just read — solve 5–10 problems per topic. Fluency comes from doing, not reviewing."
+      },
+      {
+        id: "linalg",
+        icon: "⊠",
+        iconBg: "rgba(91,196,160,0.12)",
+        title: "Linear Algebra",
+        meta: "MATH 115 / AMATH 250",
+        topics: [
+          "Vectors, dot/cross products, projections",
+          "Matrix operations, determinants, inverses",
+          "Eigenvalues and eigenvectors",
+          "Systems of linear equations; Gaussian elimination",
+          "Change of basis, linear transformations",
+          "Relevance to FEA stiffness matrices and vibrations",
+        ],
+        resources: [
+          { type: "mit", text: '<a href="https://ocw.mit.edu/courses/18-06sc-linear-algebra-fall-2011/" target="_blank">MIT 18.06SC</a> — Gilbert Strang\'s legendary Linear Algebra course' },
+          { type: "practice", text: '<a href="https://www.3blue1brown.com/topics/linear-algebra" target="_blank">3Blue1Brown: Essence of Linear Algebra</a> — Visual intuition-builder (YouTube)' },
+        ],
+        tip: null
+      },
+      {
+        id: "physics",
+        icon: "⚡",
+        iconBg: "rgba(232,97,74,0.12)",
+        title: "Engineering Physics Review",
+        meta: "PHYS 115/121",
+        topics: [
+          "Newton's laws — revisit with engineering rigor",
+          "Work, energy, power — sign conventions matter",
+          "Momentum and impulse",
+          "Rotational kinematics and dynamics",
+          "Waves, oscillations, simple harmonic motion",
+          "Basic thermodynamics: system/surroundings, state variables",
+        ],
+        resources: [
+          { type: "mit", text: '<a href="https://ocw.mit.edu/courses/8-01sc-classical-mechanics-fall-2016/" target="_blank">MIT 8.01SC</a> — Classical Mechanics (full course)' },
+          { type: "video", text: '<a href="https://www.youtube.com/playlist?list=PLybg94GvOJ9E9BcCODbTNFkR-xfQFWNEB" target="_blank">Michel van Biezen</a> — Engineering Physics playlist (YouTube)' },
+        ],
+        tip: null
+      },
+    ]
+  },
+
+  // ─── PHASE 2: CORE ME ──────────────────────────────────────────────
+  {
+    phase: 2,
+    phaseName: "Core Mechanical Engineering",
+    phaseDesc: "The heart of your undergrad. Rebuild each pillar methodically. ~12–16 weeks.",
+    subjects: [
+      {
+        id: "statics",
+        icon: "⊕",
+        iconBg: "rgba(232,197,71,0.12)",
+        title: "Statics & Mechanics of Materials",
+        meta: "ENME 220 / 321",
+        topics: [
+          "Free body diagrams — get fast and accurate again",
+          "Equilibrium of particles and rigid bodies",
+          "Truss analysis: method of joints & sections",
+          "Distributed loads, centroids, moments of inertia",
+          "Stress and strain (normal, shear)",
+          "Axial loading, torsion, bending",
+          "Beam deflection: integration method, Castigliano's theorem",
+          "Combined loading, failure criteria (von Mises, Tresca)",
+          "Buckling: Euler column formula",
+        ],
+        resources: [
+          { type: "textbook", text: "Your textbooks: Beer & Johnston — Mechanics of Materials; Hibbeler — Statics" },
+          { type: "mit", text: '<a href="https://ocw.mit.edu/courses/2-001-mechanics-materials-i-fundamentals-of-stresses-and-strains-fall-2006/" target="_blank">MIT 2.001</a> — Mechanics & Materials I (lecture notes + problems)' },
+          { type: "practice", text: '<a href="https://www.engineeringcore.com" target="_blank">EngineeringCore.com</a> — Free statics/mechanics problem sets' },
+          { type: "video", text: '<a href="https://www.youtube.com/@ProfessorAME" target="_blank">Professor AME (YouTube)</a> — Excellent worked statics problems' },
+        ],
+        tip: "Draw every FBD by hand before writing equations. This rebuilds the physical intuition that gets rusty fastest."
+      },
+      {
+        id: "dynamics",
+        icon: "↻",
+        iconBg: "rgba(91,196,160,0.12)",
+        title: "Dynamics & Vibrations",
+        meta: "ENME 320 / 421",
+        topics: [
+          "Kinematics of particles: position, velocity, acceleration",
+          "Kinetics: Newton's 2nd law in multiple coordinate systems",
+          "Work-energy and impulse-momentum methods",
+          "Kinematics of rigid bodies: rotation, general planar motion",
+          "Kinetics of rigid bodies: moments of inertia",
+          "Vibrations: SDOF free and forced response",
+          "Damping: underdamped, critically damped, overdamped",
+          "Frequency response functions, resonance",
+          "Multi-DOF systems: natural frequencies, mode shapes",
+        ],
+        resources: [
+          { type: "textbook", text: "Your textbook: Hibbeler — Engineering Mechanics: Dynamics; Inman — Engineering Vibration" },
+          { type: "mit", text: '<a href="https://ocw.mit.edu/courses/2-003j-dynamics-and-control-i-fall-2007/" target="_blank">MIT 2.003J</a> — Dynamics and Control I' },
+          { type: "sim", text: '<a href="https://phet.colorado.edu/en/simulations/masses-and-springs" target="_blank">PhET: Masses & Springs</a> — Free interactive vibration simulator' },
+          { type: "video", text: '<a href="https://www.youtube.com/watch?v=9WfHk9NOEOM&list=PLMrJAkhIeNNT_Xh3Oy0Y4LTj0Oxo8GqsC" target="_blank">Steve Brunton (YouTube)</a> — Engineering Dynamics series' },
+        ],
+        tip: "Dynamics is where most ME grads feel the most rustiness. Start with particle kinematics and work up — don't skip steps."
+      },
+      {
+        id: "thermo",
+        icon: "🔥",
+        iconBg: "rgba(232,97,74,0.12)",
+        title: "Thermodynamics",
+        meta: "ENME 250 / 352",
+        topics: [
+          "System vs. control volume analysis",
+          "First Law: closed and open systems, steady-state flow",
+          "Second Law: entropy, irreversibility, availability",
+          "Property tables: steam, refrigerants — reading and interpolating",
+          "Power cycles: Rankine, Brayton, Otto, Diesel",
+          "Refrigeration cycles and COPs",
+          "Psychrometrics and HVAC fundamentals",
+          "Combustion: air-fuel ratio, enthalpy of combustion",
+        ],
+        resources: [
+          { type: "textbook", text: "Your textbook: Cengel & Boles — Thermodynamics: An Engineering Approach" },
+          { type: "mit", text: '<a href="https://ocw.mit.edu/courses/2-006-thermal-fluids-engineering-ii-spring-2008/" target="_blank">MIT 2.006</a> — Thermal Fluids Engineering II' },
+          { type: "practice", text: '<a href="https://www.iricen.gov.in/iricen/books/Thermodynamics/Thermodynamics_Book.pdf" target="_blank">Free Engineering Thermodynamics Problems</a> (PDF workbook)' },
+          { type: "sim", text: '<a href="https://www.thermexcel.com/english/ressourc/steam_3.htm" target="_blank">Steam Tables Online</a> — Practice property lookups' },
+        ],
+        tip: "Property tables feel foreign after years away. Spend a whole session just doing table lookups and interpolations — it's a skill unto itself."
+      },
+      {
+        id: "fluids",
+        icon: "≋",
+        iconBg: "rgba(100,149,237,0.12)",
+        title: "Fluid Mechanics",
+        meta: "ENME 357",
+        topics: [
+          "Fluid properties: viscosity, surface tension, compressibility",
+          "Hydrostatics: pressure distribution, forces on surfaces",
+          "Bernoulli equation and its limitations",
+          "Control volume analysis: continuity, momentum, energy",
+          "Pipe flow: Darcy-Weisbach, Moody diagram, minor losses",
+          "Dimensional analysis and similitude (Buckingham Pi)",
+          "Boundary layer theory, drag and lift basics",
+          "Compressible flow: Mach number, isentropic relations",
+        ],
+        resources: [
+          { type: "textbook", text: "Your textbook: Munson, Young & Okiishi — Fundamentals of Fluid Mechanics" },
+          { type: "mit", text: '<a href="https://ocw.mit.edu/courses/2-20-marine-hydrodynamics-13-021-spring-2005/" target="_blank">MIT 2.20</a> — Marine Hydrodynamics (excellent lecture notes)' },
+          { type: "sim", text: '<a href="https://phet.colorado.edu/en/simulations/fluid-pressure-and-flow" target="_blank">PhET: Fluid Pressure & Flow</a> — Interactive flow simulator' },
+          { type: "video", text: '<a href="https://www.youtube.com/playlist?list=PLZ_p35VEqJeVMXGhpkFBpmCqvU0XHd4F5" target="_blank">Prof. Steven Brunton — Fluid Mechanics (YouTube)</a>' },
+        ],
+        tip: "The Moody diagram and pipe flow problems are extremely common in practice. Make sure you can do them fluently."
+      },
+      {
+        id: "heatxfer",
+        icon: "〰",
+        iconBg: "rgba(232,197,71,0.12)",
+        title: "Heat Transfer",
+        meta: "ENME 353",
+        topics: [
+          "Conduction: Fourier's law, 1D steady-state, composite walls",
+          "Fins: fin efficiency, extended surface analysis",
+          "Transient conduction: lumped capacitance, Heisler charts",
+          "Convection: boundary layer, dimensionless numbers (Re, Nu, Pr)",
+          "Internal and external flow correlations",
+          "Natural convection",
+          "Radiation: blackbody, emissivity, view factors",
+          "Heat exchangers: LMTD and NTU methods",
+        ],
+        resources: [
+          { type: "textbook", text: "Your textbook: Incropera & DeWitt — Fundamentals of Heat and Mass Transfer" },
+          { type: "mit", text: '<a href="https://ocw.mit.edu/courses/2-51-intermediate-heat-and-mass-transfer-fall-2008/" target="_blank">MIT 2.51</a> — Intermediate Heat & Mass Transfer' },
+          { type: "practice", text: '<a href="https://www.thermalfluidspedia.com/heat-transfer/" target="_blank">ThermalFluidsPedia</a> — Worked examples and theory' },
+        ],
+        tip: null
+      },
+      {
+        id: "matsci",
+        icon: "◈",
+        iconBg: "rgba(196,122,180,0.12)",
+        title: "Materials Science & Selection",
+        meta: "ENME 340 / 342",
+        topics: [
+          "Crystal structures, defects, dislocations",
+          "Phase diagrams: iron-carbon, binary alloys",
+          "Heat treatment: annealing, quenching, tempering",
+          "Mechanical properties: stress-strain, ductility, hardness",
+          "Fatigue: S-N curves, stress concentration, endurance limit",
+          "Fracture mechanics: KIC, LEFM, crack growth",
+          "Corrosion mechanisms and prevention",
+          "Polymers, ceramics, composites — properties and selection",
+          "Materials selection using Ashby charts",
+        ],
+        resources: [
+          { type: "textbook", text: "Your textbook: Shackelford — Introduction to Materials Science; Ashby — Materials Selection in Mechanical Design" },
+          { type: "mit", text: '<a href="https://ocw.mit.edu/courses/3-091sc-introduction-to-solid-state-chemistry-fall-2010/" target="_blank">MIT 3.091SC</a> — Solid State Chemistry & Materials' },
+          { type: "sim", text: '<a href="https://www.grantadesign.com/education/edupack/" target="_blank">CES EduPack</a> — Free student version for Ashby charts' },
+          { type: "practice", text: '<a href="https://www.makeitfrom.com" target="_blank">MakeItFrom.com</a> — Compare material properties quickly' },
+        ],
+        tip: "Fatigue and fracture are the most practically important topics here. Engineers in industry encounter them constantly."
+      },
+    ]
+  },
+
+  // ─── PHASE 3: ADVANCED ─────────────────────────────────────────────
+  {
+    phase: 3,
+    phaseName: "Advanced & Applied Topics",
+    phaseDesc: "Upper-year topics. Pick the tracks most relevant to your target role. ~8–12 weeks.",
+    subjects: [
+      {
+        id: "controls",
+        icon: "⟳",
+        iconBg: "rgba(91,196,160,0.12)",
+        title: "Control Systems",
+        meta: "ENME 489 / SE 380",
+        topics: [
+          "Transfer functions and block diagrams",
+          "Laplace domain analysis",
+          "Time-domain response: rise time, settling time, overshoot",
+          "Stability: Routh-Hurwitz criterion",
+          "Root locus analysis and design",
+          "Frequency response: Bode plots, gain/phase margins",
+          "PID control design and tuning",
+          "State-space representation",
+        ],
+        resources: [
+          { type: "textbook", text: "Your textbook: Nise — Control Systems Engineering; Ogata — Modern Control Engineering" },
+          { type: "mit", text: '<a href="https://ocw.mit.edu/courses/6-302-feedback-systems-spring-2007/" target="_blank">MIT 6.302</a> — Feedback Systems' },
+          { type: "sim", text: '<a href="https://ctms.engin.umich.edu/CTMS/index.php?aux=Home" target="_blank">CTMS (Michigan)</a> — Free control tutorials with MATLAB/Simulink examples' },
+          { type: "practice", text: '<a href="https://www.scilab.org/" target="_blank">Scilab</a> — Free MATLAB alternative for control system simulation' },
+        ],
+        tip: "PID tuning intuition is invaluable — even if you never write control code, you'll read specs and debug systems."
+      },
+      {
+        id: "mfg",
+        icon: "⚙",
+        iconBg: "rgba(232,97,74,0.12)",
+        title: "Manufacturing Processes & Design",
+        meta: "ENME 231 / 480",
+        topics: [
+          "Metal cutting: turning, milling, drilling — forces and speeds",
+          "Surface finish and tolerancing (GD&T fundamentals)",
+          "Casting, forging, extrusion — capabilities and limitations",
+          "Sheet metal forming, stamping",
+          "Welding processes: MIG, TIG, spot welding",
+          "Injection molding and polymer processing",
+          "Additive manufacturing: FDM, SLA, SLS — design for AM",
+          "DFM & DFA principles",
+          "Process FMEA basics",
+        ],
+        resources: [
+          { type: "textbook", text: "Your textbook: Kalpakjian — Manufacturing Engineering & Technology" },
+          { type: "mit", text: '<a href="https://ocw.mit.edu/courses/2-008-design-and-manufacturing-ii-spring-2004/" target="_blank">MIT 2.008</a> — Design and Manufacturing II' },
+          { type: "video", text: '<a href="https://www.youtube.com/@AvEChannel" target="_blank">AvE (YouTube)</a> — Brilliant real-world machining and manufacturing content' },
+          { type: "video", text: '<a href="https://www.youtube.com/@Machiningandmicrowaves" target="_blank">Machining & Microwaves (YouTube)</a> — Precision machining details' },
+        ],
+        tip: null
+      },
+      {
+        id: "fea",
+        icon: "⊞",
+        iconBg: "rgba(100,149,237,0.12)",
+        title: "Finite Element Analysis (FEA)",
+        meta: "ENME 467",
+        topics: [
+          "FEM theory: weak form, Galerkin method",
+          "1D bar and beam elements",
+          "2D plane stress/strain elements",
+          "Assembly of global stiffness matrix",
+          "Boundary conditions and loading",
+          "Mesh convergence and quality",
+          "Interpreting stress results, singularities",
+          "Thermal FEA basics",
+          "Commercial FEA software workflow",
+        ],
+        resources: [
+          { type: "textbook", text: "Your textbook: Cook — Concepts and Applications of FEA; Logan — First Course in FEM" },
+          { type: "mit", text: '<a href="https://ocw.mit.edu/courses/2-094-finite-element-analysis-of-solids-and-fluids-ii-spring-2011/" target="_blank">MIT 2.094</a> — FEA of Solids and Fluids' },
+          { type: "sim", text: '<a href="https://www.simscale.com/" target="_blank">SimScale</a> — Free browser-based FEA/CFD simulation platform (3000 hrs/yr free)' },
+          { type: "sim", text: '<a href="https://freefem.org/" target="_blank">FreeFEM</a> — Open source FEM solver' },
+          { type: "practice", text: '<a href="https://www.fea-academy.com/" target="_blank">FEA Academy</a> — Free beginner FEA tutorials' },
+        ],
+        tip: "SimScale's free tier is genuinely powerful. Build and run a simple structural simulation in week 1 — seeing results early keeps motivation high."
+      },
+      {
+        id: "mech_design",
+        icon: "✦",
+        iconBg: "rgba(232,197,71,0.12)",
+        title: "Mechanical Design & Machine Elements",
+        meta: "ENME 350 / 451",
+        topics: [
+          "Design process and engineering specifications",
+          "Factor of safety, design margins",
+          "Shaft design: torsion, bending, combined loading",
+          "Bearings: rolling element vs. journal; selection and life (L10)",
+          "Gears: spur, helical, bevel — force analysis and selection",
+          "Fasteners: bolt preload, joint stiffness, fatigue of bolted joints",
+          "Springs: compression, extension, torsion",
+          "Clutches and brakes",
+          "Belts and chain drives",
+        ],
+        resources: [
+          { type: "textbook", text: "Your textbook: Shigley's Mechanical Engineering Design (Budynas & Nisbett)" },
+          { type: "mit", text: '<a href="https://ocw.mit.edu/courses/2-72-elements-of-mechanical-design-spring-2009/" target="_blank">MIT 2.72</a> — Elements of Mechanical Design' },
+          { type: "practice", text: '<a href="https://www.engineersedge.com/bearing/bearing_life.htm" target="_blank">Engineers Edge</a> — Free bearing and shaft calculators' },
+        ],
+        tip: "Shigley's is the bible. If you only revisit one textbook in this phase, make it this one."
+      },
+      {
+        id: "cfd",
+        icon: "≋",
+        iconBg: "rgba(196,122,180,0.12)",
+        title: "Computational Methods & CFD (Optional)",
+        meta: "ENME 470 / 477",
+        topics: [
+          "Numerical methods: root finding, interpolation, integration",
+          "ODEs numerically: Euler, Runge-Kutta",
+          "PDEs: finite difference method",
+          "CFD fundamentals: RANS, turbulence models",
+          "Meshing strategies for CFD",
+          "Interpreting CFD results: convergence, residuals",
+        ],
+        resources: [
+          { type: "textbook", text: "Your textbook: Chapra — Numerical Methods for Engineers" },
+          { type: "sim", text: '<a href="https://www.simscale.com/" target="_blank">SimScale</a> — Free CFD in the browser' },
+          { type: "practice", text: '<a href="https://www.openfoam.com/" target="_blank">OpenFOAM</a> — Open source CFD (large learning curve, but industry-standard)' },
+          { type: "video", text: '<a href="https://www.youtube.com/@FluidMechanicsIIT" target="_blank">IIT Fluid Mechanics (YouTube)</a> — Free university CFD lectures' },
+        ],
+        tip: "This module is optional depending on your role. Skip or defer if not directly relevant to your target position."
+      },
+    ]
+  }
+];
+
+const SCHEDULE = [
+  { day: "Mon", task: "Math / Calc\n45 min" },
+  { day: "Tue", task: "Statics /\nDynamics\n45 min" },
+  { day: "Wed", task: "Thermo /\nFluids\n45 min" },
+  { day: "Thu", task: "Materials /\nDesign\n45 min" },
+  { day: "Fri", task: "Problem\nSets\n60 min" },
+  { day: "Sat", task: "FEA / Sim\nor Lab\n90 min" },
+  { day: "Sun", task: "Review\n& Rest\n30 min" },
+];
+
+// ──────────────────────────────────────────────
+// State
+// ──────────────────────────────────────────────
+function getState() {
+  try { return JSON.parse(localStorage.getItem('me_curriculum') || '{}'); }
+  catch { return {}; }
+}
+function setState(s) {
+  try { localStorage.setItem('me_curriculum', JSON.stringify(s)); } catch {}
+}
+function resetAll() {
+  if (!confirm('Reset all progress?')) return;
+  setState({});
+  document.querySelectorAll('.topic-check').forEach(el => {
+    el.classList.remove('checked');
+    el.nextElementSibling.classList.remove('checked');
+  });
+  updateAllProgress();
+}
+
+// ──────────────────────────────────────────────
+// Render
+// ──────────────────────────────────────────────
+function render() {
+  const root = document.getElementById('curriculum-root');
+  root.innerHTML = '';
+
+  // Schedule phase
+  const schedDiv = document.createElement('div');
+  schedDiv.className = 'phase-section';
+  schedDiv.id = 'phase-schedule';
+  schedDiv.innerHTML = `
+    <div class="phase-header">
+      <div class="phase-number">⏱</div>
+      <div class="phase-info">
+        <h2>Recommended Weekly Schedule</h2>
+        <p>~5–6 hours/week in spare time. Adjust to suit your life — consistency beats intensity.</p>
+      </div>
+    </div>
+    <div class="schedule-grid">
+      ${SCHEDULE.map(d => `
+        <div class="sched-day">
+          <div class="sched-day-name">${d.day}</div>
+          <div class="sched-day-task">${d.task}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="tip-box" style="margin-top:20px">
+      <strong>Strategy:</strong> In Phase 1 (weeks 1–6), replace the subject-specific days with pure math and physics. In Phase 2 (weeks 7–22), run two subjects in parallel. In Phase 3 (weeks 23+), focus on 1–2 tracks most relevant to your target role. Saturday simulation sessions are the most valuable — active doing beats passive reading.
+    </div>
+  `;
+  root.appendChild(schedDiv);
+
+  // Phase sections
+  DATA.forEach(phaseData => {
+    const section = document.createElement('div');
+    section.className = 'phase-section visible';
+    section.id = `phase-${phaseData.phase}`;
+
+    section.innerHTML = `
+      <div class="phase-header">
+        <div class="phase-number">0${phaseData.phase}</div>
+        <div class="phase-info">
+          <h2>${phaseData.phaseName}</h2>
+          <p>${phaseData.phaseDesc}</p>
+        </div>
+      </div>
+      <div class="subjects-grid" id="grid-${phaseData.phase}"></div>
+    `;
+
+    root.appendChild(section);
+
+    const grid = section.querySelector(`#grid-${phaseData.phase}`);
+    phaseData.subjects.forEach(sub => {
+      grid.appendChild(renderSubject(sub));
+    });
+  });
+
+  updateAllProgress();
+}
+
+function renderSubject(sub) {
+  const state = getState();
+  const card = document.createElement('div');
+  card.className = 'subject-card';
+  card.id = `card-${sub.id}`;
+
+  const topicsHtml = sub.topics.map((t, i) => {
+    const key = `${sub.id}_${i}`;
+    const checked = state[key] ? 'checked' : '';
+    return `
+      <div class="topic-item">
+        <div class="topic-check ${checked}" data-key="${key}" onclick="toggleTopic(this)"></div>
+        <div class="topic-text ${checked}" onclick="toggleTopic(this.previousElementSibling)">${t}</div>
+      </div>
+    `;
+  }).join('');
+
+  const resHtml = sub.resources.map(r => `
+    <div class="resource-item">
+      <span class="res-badge ${r.type}">${r.type === 'mit' ? 'MIT OCW' : r.type === 'textbook' ? 'YOUR BOOK' : r.type === 'practice' ? 'PRACTICE' : r.type === 'sim' ? 'SIM / LAB' : 'VIDEO'}</span>
+      <span class="res-text">${r.text}</span>
+    </div>
+  `).join('');
+
+  const done = sub.topics.filter((_, i) => state[`${sub.id}_${i}`]).length;
+  const pct = sub.topics.length ? Math.round((done / sub.topics.length) * 100) : 0;
+
+  card.innerHTML = `
+    <div class="card-progress"><div class="card-progress-fill" style="width:${pct}%"></div></div>
+    <div class="card-header" onclick="toggleCard('${sub.id}')">
+      <div class="card-icon" style="background:${sub.iconBg}">${sub.icon}</div>
+      <div class="card-title-block">
+        <div class="card-title">${sub.title}</div>
+        <div class="card-meta">${sub.meta} &nbsp;·&nbsp; ${done}/${sub.topics.length} topics</div>
+      </div>
+      <div class="card-expand">▼</div>
+    </div>
+    <div class="card-body">
+      <div class="section-label">// Core Topics</div>
+      ${topicsHtml}
+      <div class="section-label" style="margin-top:20px">// Free Resources</div>
+      ${resHtml}
+      ${sub.tip ? `<div class="tip-box"><strong>Tip →</strong> ${sub.tip}</div>` : ''}
+    </div>
+  `;
+
+  return card;
+}
+
+function toggleCard(id) {
+  const card = document.getElementById(`card-${id}`);
+  card.classList.toggle('open');
+}
+
+function toggleTopic(checkEl) {
+  const key = checkEl.dataset.key;
+  const state = getState();
+  const isChecked = checkEl.classList.toggle('checked');
+  state[key] = isChecked ? true : undefined;
+  if (!state[key]) delete state[key];
+  setState(state);
+
+  const textEl = checkEl.nextElementSibling;
+  textEl.classList.toggle('checked', isChecked);
+
+  // Update card meta and progress
+  const subId = key.split('_')[0];
+  updateCardProgress(subId);
+  updateAllProgress();
+}
+
+function updateCardProgress(subId) {
+  const state = getState();
+  const phaseData = DATA.flatMap(p => p.subjects).find(s => s.id === subId);
+  if (!phaseData) return;
+  const done = phaseData.topics.filter((_, i) => state[`${subId}_${i}`]).length;
+  const pct = Math.round((done / phaseData.topics.length) * 100);
+
+  const card = document.getElementById(`card-${subId}`);
+  if (!card) return;
+  const fill = card.querySelector('.card-progress-fill');
+  if (fill) fill.style.width = pct + '%';
+  const meta = card.querySelector('.card-meta');
+  if (meta) {
+    const parts = meta.textContent.split('·');
+    meta.innerHTML = `${parts[0].trim()} &nbsp;·&nbsp; ${done}/${phaseData.topics.length} topics`;
+  }
+}
+
+function updateAllProgress() {
+  const state = getState();
+  const allSubjects = DATA.flatMap(p => p.subjects);
+  const totalTopics = allSubjects.reduce((s, sub) => s + sub.topics.length, 0);
+  const doneTopics = allSubjects.reduce((s, sub) =>
+    s + sub.topics.filter((_, i) => state[`${sub.id}_${i}`]).length, 0);
+  const pct = totalTopics ? Math.round((doneTopics / totalTopics) * 100) : 0;
+
+  document.getElementById('global-progress-fill').style.width = pct + '%';
+  document.getElementById('global-progress-text').textContent = `${doneTopics} / ${totalTopics} topics (${pct}%)`;
+}
+
+function showPhase(phase) {
+  document.querySelectorAll('.phase-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+
+  document.querySelectorAll('.phase-section').forEach(s => s.classList.remove('visible'));
+
+  if (phase === 'all') {
+    document.querySelectorAll('.phase-section').forEach(s => {
+      if (s.id !== 'phase-schedule') s.classList.add('visible');
+    });
+  } else if (phase === 'schedule') {
+    document.getElementById('phase-schedule').classList.add('visible');
+  } else {
+    const target = document.getElementById(`phase-${phase}`);
+    if (target) target.classList.add('visible');
+  }
+}
+
+render();
+</script>
+</body>
+</html>
